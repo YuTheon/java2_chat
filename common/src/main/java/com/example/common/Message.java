@@ -1,11 +1,12 @@
 package com.example.common;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Message implements Serializable {
     private String type;
 
-    private Long timestamp;
+    private Date timestamp;
 
     private String sentBy;
 
@@ -15,7 +16,7 @@ public class Message implements Serializable {
 
     public Message(){}
 
-    public Message(String type, Long timestamp, String sentBy, String sendTo, String data) {
+    public Message(String type, Date timestamp, String sentBy, String sendTo, String data) {
         this.type = type;
         this.timestamp = timestamp;
         this.sentBy = sentBy;
@@ -23,7 +24,7 @@ public class Message implements Serializable {
         this.data = data;
     }
 
-    public Message(Long timestamp, String sentBy, String sendTo, String data) {
+    public Message(Date timestamp, String sentBy, String sendTo, String data) {
         this.type = "";
         this.timestamp = timestamp;
         this.sentBy = sentBy;
@@ -35,7 +36,7 @@ public class Message implements Serializable {
         return "Msg [sentBy= " + sentBy + ", sendTo= " + sendTo + ", \ndata= " + data + "]";
     }
 
-    public Long getTimestamp() {
+    public Date getTimestamp() {
         return timestamp;
     }
 

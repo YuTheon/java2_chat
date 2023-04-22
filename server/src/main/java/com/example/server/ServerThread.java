@@ -2,6 +2,8 @@ package com.example.server;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.Timestamp;
+import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
 import com.example.common.*;
@@ -53,20 +55,16 @@ public class ServerThread implements Runnable{
 
     public void doService() throws IOException, ClassNotFoundException {
         ois = new ObjectInputStream(socket.getInputStream());
-        Object obj = ois.readObject();
-        Message msg = (Message) obj;
-        if(msg != null){
-            if ("GET".equals(msg.getType())) {
-                doGet(msg);
-            }
-        }
         oos = new ObjectOutputStream(socket.getOutputStream());
+        Object obj;
+        Message msg;
         while(true){
             obj = ois.readObject();
             msg = (Message) obj;
             if(msg != null){
                 switch (msg.getType()){
-                    case "GET":doGet(msg);
+                    case "GET":doGet(msg);break;
+                    case "POST":doPOST(msg);break;
                 }
             }
         }
@@ -74,12 +72,19 @@ public class ServerThread implements Runnable{
 
     public void doGet(Message message) throws IOException {
         if(message.getData().equals("onlineUsers")){
-//            NOTE 要求人名不能有逗号
-            String online = String.join(",", Server.onlineUsers.keySet());
-            Message rtn = new Message("POST", 1L, "SERVER", message.getSentBy(), online);
-            oos.writeObject(rtn);
+//            NOTE 要求人名不能有逗号，如果发来信息的人名不在列表里，就加入列表
+            String sendBy = message.getSentBy();
+            if(!Server.onlineUsers.containsKey(sendBy)){
+                Server.onlineUsers.put(sendBy, socket);
+                oos.writeObject(new Message("POST", new Date(), "SERVER", message.getSentBy(), String.join(",", Server.onlineUsers.keySet())));
+            }else{
+                oos.writeObject(new Message("FAIL", new Date(), "SERVER", message.getSentBy(), ""));
+            }
             oos.flush();
         }
+    }
+
+    public void doPOST(Message msg){
     }
     public void executeCommand(String command) throws IOException {
         /**

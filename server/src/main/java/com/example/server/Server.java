@@ -35,20 +35,20 @@ public class Server  {
             /**
              * 下面进行直接连接
              */
-            System.out.println(new Date());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            Message msg = (Message) in.readObject();
-            System.out.println("msg type " + msg.getType());
-            out.writeObject(new Message("POST", 1L, "yy", "yxy", "successful"));
-            out.flush();
+//            System.out.println(new Date());
+//            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+//            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+//            Message msg = (Message) in.readObject();
+//            System.out.println("msg type " + msg.getType());
+//            out.writeObject(new Message("POST", 1L, "yy", "yxy", "successful"));
+//            out.flush();
 //            放进去的应该是一个单独的房间，
 
-//            Room room = chooseRoom(availableRooms, usingRooms);
-////            TODO 实现server和thread之间的通信，来确定在线人数
-//            ServerThread serverThread = new ServerThread(socket, room, onlineUsers);
-//            Thread thread = new Thread(serverThread);
-//            thread.start();
+            Room room = chooseRoom(availableRooms, usingRooms);
+//            TODO 实现server和thread之间的通信，来确定在线人数
+            ServerThread serverThread = new ServerThread(socket, room, onlineUsers);
+            Thread thread = new Thread(serverThread);
+            thread.start();
         }
 
     }

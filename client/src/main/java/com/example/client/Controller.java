@@ -24,6 +24,10 @@ public class Controller implements Initializable {
 
     @FXML
     ListView<Message> chatContentList;
+    @FXML
+    Label currentUsername;
+    @FXML
+    Label currentOnlineCnt;
 
     String username;
     String sendTo;
@@ -32,6 +36,11 @@ public class Controller implements Initializable {
     ObjectOutputStream oos;
     final int PORT = 8895;
 
+    /**
+     * 这里检查了用户输入的名字是否已经在线
+     * @param url
+     * @param resourceBundle
+     */
     @lombok.SneakyThrows
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -40,54 +49,38 @@ public class Controller implements Initializable {
         dialog.setTitle("Login");
         dialog.setHeaderText(null);
         dialog.setContentText("Username:");
-
         Optional<String> input = dialog.showAndWait();
-        if (input.isPresent() && !input.get().isEmpty()) {
-            /*
-               TODO: Check if there is a user with the same name among the currently logged-in users,
-                     if so, ask the user to change the username
-                     查看是否有重名
-             */
-//            oos = new ObjectOutputStream(socket.getOutputStream ());
-//            oos.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
-//            oos.flush();
-//            System.out.println("into check name 2");
-//            ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-//            Object obj = ois.readObject();
-//            Message rtn = (Message) obj;
-//            List<String> online = Arrays.asList(rtn.getData().split(","));
-//            System.out.println("into check name 3");
-//            if(online.size() != 0 && online.contains(input.get())){
-//                System.out.println("change your name, there has been the name!");
-//                Platform.exit();
-//            }
-            /**
-             * simple socket connection,在之后都不能连接
-             */
-            System.out.println("socket connecton " + socket.isConnected());
-            System.out.println(new Date());
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-            out.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
-            out.flush();
-            Message msg = (Message) in.readObject();
-            System.out.println(msg.getData());
-            out.close();
-            in.close();
-            username = input.get();
-        } else {
-            System.out.println("Invalid username " + input + ", exiting");
-            Platform.exit();
+        oos = new ObjectOutputStream(socket.getOutputStream());
+        ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+        while(true) {
+            if (input.isPresent() && !input.get().isEmpty()) {
+                oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "onlineUsers"));
+                oos.flush();
+                Object obj = ois.readObject();
+                Message rtn = (Message) obj;
+                if(rtn.getType().equals("FAIL")){
+                    System.out.println("change your name, there has been the name!");
+                    input = dialog.showAndWait();
+                    continue;
+                }
+                List<String> online = Arrays.asList(rtn.getData().split(","));
+                System.out.println(online);
+                currentOnlineCnt.setText("Online: "+online.size());
+                username = input.get();
+                break;
+            } else {
+                System.out.println("Invalid username " + input + ", exiting");
+                input = dialog.showAndWait();
+            }
         }
         chatContentList.setCellFactory(new MessageCellFactory());
-
-        /**
-         * 下面部分开始和server不断通信
-         * 在main里已经建立的socket，但是怎么用到这里？
-         * 这里通信的话会阻塞下面程序的进一步运行，再考虑一下socket应该放在哪里
-         */
+        currentUsername.setText("Current User: "+username);
     }
 
+
+    /**
+     * 接下来就是对不同的按键定义内容了，首先是发送消息，其次是接收消息
+     */
     @FXML
     public void createPrivateChat() {
         AtomicReference<String> user = new AtomicReference<>();
@@ -157,7 +150,7 @@ public class Controller implements Initializable {
             alert.setContentText("Blank messages are not allowed.");
             alert.showAndWait();
         }else{
-            chatContentList.getItems().add(new Message(1L, username, sendTo, inputArea.getText().trim()));
+            chatContentList.getItems().add(new Message(new Date(), username, sendTo, inputArea.getText().trim()));
         }
     }
 
