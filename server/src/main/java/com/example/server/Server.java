@@ -19,7 +19,7 @@ public class Server  {
          * @onlineUsers 当前在线的用户，每一个新建的用户就会在Map里面存入名字以及对应的联系方式
          */
         final int ACCOUNTS_LIMITS = 20;
-        final int PORT = 8888;
+        final int PORT = 8894;
 
         ServerSocket serverSocket = new ServerSocket(PORT);
         serverSocket.setReuseAddress(true);

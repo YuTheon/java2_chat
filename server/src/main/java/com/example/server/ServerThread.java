@@ -31,7 +31,6 @@ public class ServerThread implements Runnable{
      */
     @Override
     public void run() {
-        try {
             try {
                 /**
                  * 这里遇到的问题就是传输对象的话就无法实现异步，输入输出会出现阻塞（）
@@ -42,38 +41,34 @@ public class ServerThread implements Runnable{
 //                OutputStream os = socket.getOutputStream();
 //                oos = new ObjectOutputStream(os);
 //                oos.writeObject(new User(1, "yy"));
-                ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-                oos = new ObjectOutputStream(socket.getOutputStream());
+
 
 //                InputStream is = socket.getInputStream();
 //                br = new BufferedReader(new InputStreamReader(is));
                 doService();
-            } finally {
-                socket.close();
-            }
         }catch (IOException | ClassNotFoundException exception){
             exception.printStackTrace();
         }
     }
 
     public void doService() throws IOException, ClassNotFoundException {
+        ois = new ObjectInputStream(socket.getInputStream());
+        Object obj = ois.readObject();
+        Message msg = (Message) obj;
+        if(msg != null){
+            if ("GET".equals(msg.getType())) {
+                doGet(msg);
+            }
+        }
+        oos = new ObjectOutputStream(socket.getOutputStream());
         while(true){
-            Object obj = ois.readObject();
-            Message msg = (Message) obj;
+            obj = ois.readObject();
+            msg = (Message) obj;
             if(msg != null){
                 switch (msg.getType()){
                     case "GET":doGet(msg);
                 }
             }
-//            out.println("hello");
-//            out.flush();
-//            if(!in.hasNext())return;
-//            String command = in.next();
-//            if("QUIT".equals(command))return;
-//            if(br.readLine()==null)return;
-//            String info = br.readLine();
-//            if("QUIT".equals(info))return;
-//            executeCommand(info);
         }
     }
 

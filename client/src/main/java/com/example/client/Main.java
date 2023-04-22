@@ -18,7 +18,7 @@ public class Main extends Application {
     public static Scanner in;
     public static PrintWriter out;
     public static void main(String[] args) throws IOException {
-        final int PORT = 8888;
+        final int PORT = 8894;
         try(Socket s = new Socket("localhost", PORT)){
             InputStream is = s.getInputStream();
             OutputStream os = s.getOutputStream();

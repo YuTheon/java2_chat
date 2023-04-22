@@ -48,13 +48,11 @@ public class Controller implements Initializable {
                      if so, ask the user to change the username
                      查看是否有重名
              */
-            System.out.println("into check name 1");
-            System.out.println("socket is connected "+socket.isConnected());
-            oos = new ObjectOutputStream(socket.getOutputStream());
-            ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+            oos = new ObjectOutputStream(socket.getOutputStream ());
             oos.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
             oos.flush();
             System.out.println("into check name 2");
+            ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
             Object obj = ois.readObject();
             Message rtn = (Message) obj;
             List<String> online = Arrays.asList(rtn.getData().split(","));
