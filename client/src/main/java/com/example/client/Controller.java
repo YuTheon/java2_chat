@@ -48,20 +48,32 @@ public class Controller implements Initializable {
                      if so, ask the user to change the username
                      查看是否有重名
              */
-            oos = new ObjectOutputStream(socket.getOutputStream ());
-            oos.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
-            oos.flush();
-            System.out.println("into check name 2");
-            ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-            Object obj = ois.readObject();
-            Message rtn = (Message) obj;
-            List<String> online = Arrays.asList(rtn.getData().split(","));
-            System.out.println("into check name 3");
-            if(online.size() != 0 && online.contains(input.get())){
-                System.out.println("change your name, there has been the name!");
-                Platform.exit();
-            }
-            System.out.println("into check name 4");
+//            oos = new ObjectOutputStream(socket.getOutputStream ());
+//            oos.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
+//            oos.flush();
+//            System.out.println("into check name 2");
+//            ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+//            Object obj = ois.readObject();
+//            Message rtn = (Message) obj;
+//            List<String> online = Arrays.asList(rtn.getData().split(","));
+//            System.out.println("into check name 3");
+//            if(online.size() != 0 && online.contains(input.get())){
+//                System.out.println("change your name, there has been the name!");
+//                Platform.exit();
+//            }
+            /**
+             * simple socket connection,在之后都不能连接
+             */
+            System.out.println("socket connecton " + socket.isConnected());
+            System.out.println(new Date());
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            out.writeObject(new Message("GET", 1L, input.get(), "SERVER", "onlineUsers"));
+            out.flush();
+            Message msg = (Message) in.readObject();
+            System.out.println(msg.getData());
+            out.close();
+            in.close();
             username = input.get();
         } else {
             System.out.println("Invalid username " + input + ", exiting");
