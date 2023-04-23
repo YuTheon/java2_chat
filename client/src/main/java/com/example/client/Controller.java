@@ -3,12 +3,14 @@ package com.example.client;
 import com.example.common.Message;
 import com.example.common.Room;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -22,6 +24,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class Controller implements Initializable {
 
@@ -37,16 +40,17 @@ public class Controller implements Initializable {
 //    上面是两人聊天，通过人可以唯一确定；下面是群聊，参加人之外需要一点特殊标记-组名
     static Map<String, Room> chatRoom;
     static Map<String, Room> chatRooms;
-
+//  这里是？？
     static Map<String, List<Message>> chatWith;
 
-    String username;
+    static String username;
     static String sendTo;
-    Socket socket;
-    ObjectInputStream ois;
-    ObjectOutputStream oos;
+    static Socket socket;
+    static ObjectInputStream ois;
+    static ObjectOutputStream oos;
     ClientThread clientThread;
     final int PORT = 8895;
+    static boolean QUIT = false;
 
     /**
      * 这里检查了用户输入的名字是否已经在线
@@ -62,27 +66,40 @@ public class Controller implements Initializable {
         dialog.setHeaderText(null);
         dialog.setContentText("Username:");
         Optional<String> input = dialog.showAndWait();
+
         oos = new ObjectOutputStream(socket.getOutputStream());
         ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
         while(true) {
-            if (input.isPresent() && !input.get().isEmpty()) {
-                oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "join"));
-                oos.flush();
-                Object obj = ois.readObject();
-                Message rtn = (Message) obj;
-                if(rtn.getType().equals("FAIL")){
-                    System.out.println("change your name, there has been the name!");
-                    input = dialog.showAndWait();
-                    continue;
+            if(input.isPresent()) {
+                if (!input.get().isEmpty()) {
+                    oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "join"));
+                    oos.flush();
+                    Object obj = ois.readObject();
+                    Message rtn = (Message) obj;
+                    if (rtn.getType().equals("FAIL")) {
+                        System.out.println("change your name, there has been the name!");
+                        input = dialog.showAndWait();
+                        continue;
+                    }
+                    List<String> online = Arrays.asList(rtn.getData().split(","));
+                    currentOnlineCnt.setText("Online: " + online.size());
+                    username = input.get();
+                    break;
+                }else {
+                    QUIT = true;
                 }
-                List<String> online = Arrays.asList(rtn.getData().split(","));
-                currentOnlineCnt.setText("Online: "+online.size());
-                username = input.get();
-                break;
-            } else {
-                System.out.println("Invalid username " + input + ", exiting");
-                input = dialog.showAndWait();
             }
+            else {
+                QUIT = true;
+                Platform.exit();
+                break;
+            }
+        }
+        if(QUIT){
+            return;
+//            Stage stage = (Stage)chatList.getScene().getWindow();
+////            Stage stage = (Stage)chatContentList.getScene().getWindow();
+//            stage.close();
         }
         chatContentList.setCellFactory(new MessageCellFactory());
         chatList.setCellFactory(new ChatCellFactory());
@@ -133,13 +150,27 @@ public class Controller implements Initializable {
 //            如果这个人已经聊过天，就显示之前的聊天记录，
                 if (!chatWith.containsKey(sendTo)) {
                     chatWith.put(sendTo, new ArrayList<>());
+                    chatRoom.put(sendTo, new Room(username, sendTo));
                 }
-                chatContentList.getItems().clear();
-//            TODO 不知道下面这一步恢复的顺序会不会乱
-                chatContentList.getItems().addAll(chatWith.get(sendTo));
+                changeChatContentList(chatContentList, sendTo);
 //                如果没有聊过，就新建Room
-                chatRoom.put(sendTo, new Room(username, sendTo));
-                chatList.getItems().add(chatRoom.get(sendTo));
+
+//                FIXME 这一步没有删掉还是？
+                System.out.println("time to delete");
+//                try {
+//                    Thread.sleep(1000);
+//                    chatList.getItems().remove(chatRoom.get(sendTo));//TODO 这里的ROOM是什么，去
+//                    System.out.println("has deleted");
+//                    Thread.sleep(1000);
+//                    chatList.getItems().add(0, chatRoom.get(sendTo));
+//                } catch (InterruptedException ex) {
+//                    throw new RuntimeException(ex);
+//                }
+                System.out.println("sendTo: "+sendTo);
+                System.out.println("chatList : "+ chatRoom.keySet().stream().collect(Collectors.joining(", ")));
+                System.out.println(chatRoom.get(sendTo).getData());
+                chatList.getItems().remove(chatRoom.get(sendTo));
+                chatList.getItems().add(0, chatRoom.get(sendTo));
 
                 try {
                     oos.writeObject(new Message("CHAT", new Date(), username, sendTo, ""));
@@ -213,16 +244,67 @@ public class Controller implements Initializable {
              */
             chatContentList.getItems().add(msg);
             chatWith.get(sendTo).add(msg);
+            System.out.println("in do send");
+            System.out.println(chatRoom.get(sendTo).getData());
             chatList.getItems().remove(chatRoom.get(sendTo));
-            chatRoom.get(sendTo).getData().get(username).add(msg);
-            chatRoom.get(sendTo).setShowOnChatList(sendTo+": "+msg.getData());
+            chatRoom.get(sendTo).addMsg(msg);
             chatList.getItems().add(0, chatRoom.get(sendTo));
+
             oos.writeObject(msg);
             oos.flush();
         }
         inputArea.setText("");
     }
 
+    /**
+     * 增加消息
+     * @param msg
+     */
+    public static void updateChatContentList(ListView<Message> chatContentList, Message msg){
+        chatContentList.getItems().add(msg);
+    }
+
+    /**
+     * 更换显示内容
+     * @param sendTo
+     */
+    public static void changeChatContentList(ListView<Message> chatContentList, String sendTo){
+        chatContentList.getItems().clear();
+        chatContentList.getItems().addAll(chatWith.get(sendTo));
+    }
+
+    /**
+     * 这里是接收到消息之后的全部吗
+     * @param chatList
+     * @param msg
+     */
+    public static void updateChatList(ListView<Room> chatList, Message msg){
+//        if(chatWith.containsKey(msg.getSentBy())){
+//            chatWith.get(msg.getSentBy()).add(msg);
+//        }else{
+//            chatWith.put(msg.getSentBy(), new ArrayList<>());
+//            chatWith.get(msg.getSentBy()).add(msg);
+//        }
+//        System.out.println("updateChatList:280");
+        if(!chatRoom.containsKey(msg.getSentBy())){
+//            System.out.println("contain no name");
+            chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
+            chatRoom.get(msg.getSentBy()).addMsg(msg);
+            chatList.getItems().add(0, chatRoom.get(msg.getSentBy()));
+        }else {
+//            System.out.println("contain name");
+            chatList.getItems().remove(chatRoom.get(msg.getSentBy()));
+            chatRoom.get(msg.getSentBy()).addMsg(msg);
+//            chatRoom.get(msg.getSentBy()).getData().get(msg.getSentBy()).add(msg);
+            chatList.getItems().add(0, chatRoom.get(msg.getSentBy()));
+        }
+    }
+
+    public void updateChatContentClick(Room room){
+        sendTo = room.getName();
+        chatContentList.getItems().clear();
+        chatContentList.getItems().addAll(chatWith.get(sendTo));
+    }
 
     /**
      * You may change the cell factory if you changed the design of {@code Message} model.
@@ -285,13 +367,19 @@ public class Controller implements Initializable {
                     Label nameLabel = new Label(room.getName());
                     Label msgLabel = new Label(room.getShowOnChatList());
 
-                    nameLabel.setPrefSize(50, 20);
+                    nameLabel.setPrefSize(100, 20);
                     nameLabel.setWrapText(true);
                     nameLabel.setStyle("-fx-border-color: gray;");
 
                     wrapper.setAlignment(Pos.TOP_LEFT);
                     wrapper.getChildren().addAll(nameLabel, msgLabel);
                     msgLabel.setPadding(new Insets(5, 0, 0, 0));
+                    wrapper.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent mouseEvent) {
+                            updateChatContentClick(room);//TODO 还需要chatContentList才能更新
+                        }
+                    });
 
                     setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                     setGraphic(wrapper);

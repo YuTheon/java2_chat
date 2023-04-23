@@ -48,6 +48,24 @@ public class Server  {
         }
 
     }
+
+    public static List<String> checkOnline(){
+        List<String> name = onlineUsers.keySet().stream().toList();
+        List<String> res = new ArrayList<>();
+        for(String n : name){
+            if(onlineUsers.get(n).isConnected()){
+                res.add(n);
+//                System.out.println("online "+n);
+            }else{
+//                System.out.println("remove "+n);
+                onlineUsers.remove(n);
+                userOos.remove(n);
+                userOis.remove(n);
+            }
+        }
+//        System.out.println("------------------------------");
+        return res;
+    }
     public static Room chooseRoom(List<Room> aRooms, List<Room> uRooms){
         if(aRooms.size()==0){
             Room room = new Room();

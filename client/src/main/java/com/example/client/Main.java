@@ -1,6 +1,8 @@
 package com.example.client;
 
+import com.example.common.Message;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Main extends Application {
@@ -30,5 +33,22 @@ public class Main extends Application {
         stage.setScene(new Scene(fxmlLoader.load()));
         stage.setTitle("Chatting Client");
         stage.show();
+        System.out.println(111);
+        stage.setOnCloseRequest(windowEvent -> {
+            Platform.exit();
+            stage.close();
+            try {
+                Controller.oos.writeObject(new Message("QUIT", new Date(), Controller.username, "SERVER", ""));
+                Controller.oos.flush();
+                Thread.sleep(100);
+                Controller.oos.close();
+                Controller.ois.close();
+                Controller.socket.close();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        });
     }
+
 }

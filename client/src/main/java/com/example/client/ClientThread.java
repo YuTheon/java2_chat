@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ClientThread implements Runnable{
     private ObjectOutputStream oos;
@@ -41,6 +42,7 @@ public class ClientThread implements Runnable{
     }
 
 
+    private volatile boolean quit = false;
     @Override
     public void run() {
         try {
@@ -50,8 +52,7 @@ public class ClientThread implements Runnable{
              */
             Object obj;
             Message msg;
-            boolean quit = false;
-            do {
+            while (!quit){
                 obj = ois.readObject();
                 msg = (Message) obj;
                 System.out.println(msg);
@@ -66,17 +67,25 @@ public class ClientThread implements Runnable{
                         case "RGET":
                             doRGET(msg);
                             break;
+                        case "CHECKONLINE":
+                            doCheckOnline(msg);
+                            break;
                         case "QUIT":
+                            System.out.println("QUIT");
                             quit = true;
                             break;
                     }
                 }
-            } while (!quit);
+            }
         }catch (IOException | ClassNotFoundException exception){
             exception.printStackTrace();
         }
     }
 
+    /**
+     * 这里也相当与接收信息，需要更新chatList
+     * @param msg
+     */
     public void doPOST(Message msg){
         if(Controller.chatWith.containsKey(msg.getSentBy())) {
             Controller.chatWith.get(msg.getSentBy()).add(msg);
@@ -95,13 +104,14 @@ public class ClientThread implements Runnable{
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                if(!Controller.chatRoom.containsKey(msg.getSentBy())){
-                    Controller.chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
-                }
-                chatList.getItems().remove(Controller.chatRoom.get(msg.getSentBy()));
-                Controller.chatRoom.get(msg.getSentBy()).getData().get(msg.getSendTo()).add(msg);
-                Controller.chatRoom.get(msg.getSentBy()).setShowOnChatList(msg.getSentBy()+": "+msg.getData());
-                chatList.getItems().add(0, Controller.chatRoom.get(msg.getSentBy()));
+                Controller.updateChatList(chatList, msg);
+//                if(!Controller.chatRoom.containsKey(msg.getSentBy())){
+//                    Controller.chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
+//                }
+//                chatList.getItems().remove(Controller.chatRoom.get(msg.getSentBy()));
+//                Controller.chatRoom.get(msg.getSentBy()).getData().get(msg.getSendTo()).add(msg);
+//                Controller.chatRoom.get(msg.getSentBy()).setShowOnChatList(msg.getSentBy()+": "+msg.getData());
+//                chatList.getItems().add(0, Controller.chatRoom.get(msg.getSentBy()));
             }
         });
     }
@@ -109,6 +119,20 @@ public class ClientThread implements Runnable{
     public void doRGET(Message msg){
         res = msg;
         getting = true;
+    }
+
+    public void doCheckOnline(Message msg){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    oos.writeObject(new Message("ISONLINE", new Date(), msg.getSendTo(), msg.getSentBy(), ""));
+                    oos.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
     public void doPostFail(Message msg){
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

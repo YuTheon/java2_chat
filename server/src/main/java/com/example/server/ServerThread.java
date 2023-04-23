@@ -17,6 +17,8 @@ public class ServerThread implements Runnable{
     private PrintWriter out;
     private ObjectInputStream ois;
     private ObjectOutputStream oos;
+    private volatile boolean stop = false;
+
 
     private Room room;
 
@@ -38,7 +40,7 @@ public class ServerThread implements Runnable{
                  */
                 Object obj;
                 Message msg;
-                while(true){
+                while(!stop){
                     obj = ois.readObject();
                     msg = (Message) obj;
                     if(msg != null){
@@ -46,6 +48,7 @@ public class ServerThread implements Runnable{
                             case "GET":doGet(msg);break;
                             case "CHAT":doCHAT(msg);break;
                             case "POST":doPOST(msg);break;
+                            case "QUIT":doQUIT(msg);break;
                         }
                     }
                 }
@@ -58,6 +61,7 @@ public class ServerThread implements Runnable{
     public void doGet(Message msg) throws IOException {
         if(msg.getData().equals("join")){
 //            NOTE 要求人名不能有逗号，如果发来信息的人名不在列表里，就加入列表
+            Server.checkOnline();
             String sendBy = msg.getSentBy();
             if(!Server.onlineUsers.containsKey(sendBy)){
                 Server.onlineUsers.put(sendBy, socket);
@@ -68,6 +72,9 @@ public class ServerThread implements Runnable{
                 oos.writeObject(new Message("FAIL", new Date(), "SERVER", msg.getSentBy(), ""));
             }
         }else if(msg.getData().equals("onlineUsers")){
+//            oos.writeObject(new Message("RGET", new Date(), "SERVER", msg.getSentBy(),
+//                    String.join(",", Server.checkOnline())));
+            Server.checkOnline();
             oos.writeObject(new Message("RGET", new Date(), "SERVER", msg.getSentBy(),
                     String.join(",", Server.onlineUsers.keySet().stream().filter(s -> !s.equals(msg.getSentBy())).toList())));
         }
@@ -125,5 +132,20 @@ public class ServerThread implements Runnable{
             os.writeObject(msg);
             os.flush();
         }
+    }
+    public void doQUIT(Message msg) throws IOException {
+        String sendBy = msg.getSentBy();
+        System.out.println("do quit");
+        oos.writeObject(new Message("QUIT", new Date(), "SERVER", msg.getSentBy(), ""));
+        oos.flush();
+        oos.close();
+        ois.close();
+        socket.close();
+        Server.onlineUsers.remove(sendBy);
+        Server.userOos.remove(sendBy);
+        Server.userOis.remove(sendBy);
+        Server.checkOnline();
+        stop = true;
+//        System.out.println("STOP");
     }
 }

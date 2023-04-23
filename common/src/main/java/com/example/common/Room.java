@@ -41,13 +41,22 @@ public class Room {
     public void clean(){
         data = new HashMap<>();
     }
+    public void addMsg(Message msg){
+        if(!data.containsKey(msg.getSentBy())){
+            data.put(msg.getSentBy(), new ArrayList<>());
+        }
+        data.get(msg.getSentBy()).add(msg);
+        showOnChatList = msg.getSentBy() + ": " + msg.getData();
+    }
     public String getName(){
         memberNum = data.size();
-        if(memberNum > 3){
-            name = data.keySet().stream().limit(3).
-                    collect(Collectors.joining(","))+"...("+memberNum+")";
-        }else{
-            name = String.join(",", data.keySet());
+        if(name == null) {
+            if (memberNum > 3) {
+                name = data.keySet().stream().limit(3).
+                        collect(Collectors.joining(",")) + "...(" + memberNum + ")";
+            } else {
+                name = String.join(",", data.keySet());
+            }
         }
         return name;
     }
@@ -56,6 +65,7 @@ public class Room {
     }
     public String getShowOnChatList(){
         if(showOnChatList == null){
+
             showOnChatList = "server:no message";
         }
         return showOnChatList;
