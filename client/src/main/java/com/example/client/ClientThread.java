@@ -81,12 +81,14 @@ public class ClientThread implements Runnable{
             Controller.chatWith.put(msg.getSentBy(), new ArrayList<>());
             Controller.chatWith.get(msg.getSentBy()).add(msg);
         }
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                chatContentList.getItems().add(msg);
-            }
-        });
+        if(Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    chatContentList.getItems().add(msg);
+                }
+            });
+        }
     }
 
     public void doRGET(Message msg){

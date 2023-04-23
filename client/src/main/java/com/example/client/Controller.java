@@ -33,7 +33,7 @@ public class Controller implements Initializable {
     static Map<String, List<Message>> chatWith;
 
     String username;
-    String sendTo;
+    static String sendTo;
     Socket socket;
     ObjectInputStream ois;
     ObjectOutputStream oos;
