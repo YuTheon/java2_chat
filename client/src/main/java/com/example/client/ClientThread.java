@@ -1,6 +1,7 @@
 package com.example.client;
 
 import com.example.common.Message;
+import com.example.common.Room;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -15,15 +16,17 @@ public class ClientThread implements Runnable{
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
     private ListView<Message> chatContentList;
+    private ListView<Room> chatList;
     private String userName;
     private Message res;
     private boolean getting = false;
     public ClientThread(){}
-    public ClientThread(String userName, ObjectInputStream ois, ObjectOutputStream oos, ListView<Message> chatContentList){
+    public ClientThread(String userName, ObjectInputStream ois, ObjectOutputStream oos, ListView<Message> chatContentList, ListView<Room> chatList){
         this.userName = userName;
         this.ois = ois;
         this.oos = oos;
         this.chatContentList = chatContentList;
+        this.chatList = chatList;
     }
     public Message getRes(){
         return res;
@@ -89,6 +92,18 @@ public class ClientThread implements Runnable{
                 }
             });
         }
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if(!Controller.chatRoom.containsKey(msg.getSentBy())){
+                    Controller.chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
+                }
+                chatList.getItems().remove(Controller.chatRoom.get(msg.getSentBy()));
+                Controller.chatRoom.get(msg.getSentBy()).getData().get(msg.getSendTo()).add(msg);
+                Controller.chatRoom.get(msg.getSentBy()).setShowOnChatList(msg.getSentBy()+": "+msg.getData());
+                chatList.getItems().add(0, Controller.chatRoom.get(msg.getSentBy()));
+            }
+        });
     }
 
     public void doRGET(Message msg){

@@ -1,6 +1,7 @@
 package com.example.client;
 
 import com.example.common.Message;
+import com.example.common.Room;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -9,6 +10,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -29,6 +31,12 @@ public class Controller implements Initializable {
     Label currentUsername;
     @FXML
     Label currentOnlineCnt;
+    @FXML
+    ListView<Room> chatList;
+
+//    上面是两人聊天，通过人可以唯一确定；下面是群聊，参加人之外需要一点特殊标记-组名
+    static Map<String, Room> chatRoom;
+    static Map<String, Room> chatRooms;
 
     static Map<String, List<Message>> chatWith;
 
@@ -77,10 +85,13 @@ public class Controller implements Initializable {
             }
         }
         chatContentList.setCellFactory(new MessageCellFactory());
+        chatList.setCellFactory(new ChatCellFactory());
         currentUsername.setText("Current User: "+username);
         chatWith = new HashMap<>();
+        chatRoom = new HashMap<>();
+        chatRooms = new HashMap<>();
 //        开启新线程，不断监听server发过来的消息
-        clientThread = new ClientThread(username, ois, oos, chatContentList);
+        clientThread = new ClientThread(username, ois, oos, chatContentList, chatList);
         Thread thread = new Thread(clientThread);
         thread.start();
     }
@@ -92,7 +103,11 @@ public class Controller implements Initializable {
      * 1. 选择聊天对象
      * 2. 将页面切换到对应内容
      * 3. 恢复聊天对象的记录
+     * 存在问题
+     * 1. 两个客户端同时打开私聊对象选择框，有一个的会无法响应
      */
+//    TODO 这里ROOM注意，在之前聊天的时候都要在这里面加入消息，前面的list最好改成Map<String, Room>;另外String好像也不是唯一标识码，但是这里暂时这么设定
+
     @FXML
     public void createPrivateChat() throws IOException, ClassNotFoundException {
         AtomicReference<String> user = new AtomicReference<>();
@@ -115,14 +130,16 @@ public class Controller implements Initializable {
             user.set(userSel.getSelectionModel().getSelectedItem());
             if(user.get()!=null) {
                 sendTo = user.get();
-//            如果这个人已经聊过天，就显示之前的聊天记录
+//            如果这个人已经聊过天，就显示之前的聊天记录，
                 if (!chatWith.containsKey(sendTo)) {
                     chatWith.put(sendTo, new ArrayList<>());
                 }
                 chatContentList.getItems().clear();
-
 //            TODO 不知道下面这一步恢复的顺序会不会乱
                 chatContentList.getItems().addAll(chatWith.get(sendTo));
+//                如果没有聊过，就新建Room
+                chatRoom.put(sendTo, new Room(username, sendTo));
+                chatList.getItems().add(chatRoom.get(sendTo));
 
                 try {
                     oos.writeObject(new Message("CHAT", new Date(), username, sendTo, ""));
@@ -187,8 +204,19 @@ public class Controller implements Initializable {
             alert.showAndWait();
         }else{
             Message msg = new Message("POST",new Date(), username, sendTo, inputArea.getText().trim());
+            /**
+             * 发送的时候
+             * 1. 更新右边显示
+             * 2. TODO 没有太记得chatWith是干嘛，不同人之间的对话会弄混吗这样
+             * 3. 更新聊天的room以及chatList(左边的显示框) TODO 注意chatList的更新需要将item插入到最上面
+             * 4. 发送消息
+             */
             chatContentList.getItems().add(msg);
             chatWith.get(sendTo).add(msg);
+            chatList.getItems().remove(chatRoom.get(sendTo));
+            chatRoom.get(sendTo).getData().get(username).add(msg);
+            chatRoom.get(sendTo).setShowOnChatList(sendTo+": "+msg.getData());
+            chatList.getItems().add(0, chatRoom.get(sendTo));
             oos.writeObject(msg);
             oos.flush();
         }
@@ -235,6 +263,39 @@ public class Controller implements Initializable {
 
                     setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                     setGraphic(wrapper);
+                }
+            };
+        }
+    }
+
+    private class ChatCellFactory implements Callback<ListView<Room>, ListCell<Room>> {
+        @Override
+        public ListCell<Room> call(ListView<Room> param){
+            return new ListCell<>(){
+                @Override
+                public void updateItem(Room room, boolean empty){
+                    super.updateItem(room, empty);
+                    if (empty || Objects.isNull(room)) {
+                        setText(null);
+                        setGraphic(null);
+                        return;
+                    }
+
+                    VBox wrapper = new VBox();
+                    Label nameLabel = new Label(room.getName());
+                    Label msgLabel = new Label(room.getShowOnChatList());
+
+                    nameLabel.setPrefSize(50, 20);
+                    nameLabel.setWrapText(true);
+                    nameLabel.setStyle("-fx-border-color: gray;");
+
+                    wrapper.setAlignment(Pos.TOP_LEFT);
+                    wrapper.getChildren().addAll(nameLabel, msgLabel);
+                    msgLabel.setPadding(new Insets(5, 0, 0, 0));
+
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                    setGraphic(wrapper);
+
                 }
             };
         }
