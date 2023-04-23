@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -29,11 +30,14 @@ public class Controller implements Initializable {
     @FXML
     Label currentOnlineCnt;
 
+    static Map<String, List<Message>> chatWith;
+
     String username;
     String sendTo;
     Socket socket;
     ObjectInputStream ois;
     ObjectOutputStream oos;
+    ClientThread clientThread;
     final int PORT = 8895;
 
     /**
@@ -54,7 +58,7 @@ public class Controller implements Initializable {
         ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
         while(true) {
             if (input.isPresent() && !input.get().isEmpty()) {
-                oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "onlineUsers"));
+                oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "join"));
                 oos.flush();
                 Object obj = ois.readObject();
                 Message rtn = (Message) obj;
@@ -64,7 +68,6 @@ public class Controller implements Initializable {
                     continue;
                 }
                 List<String> online = Arrays.asList(rtn.getData().split(","));
-                System.out.println(online);
                 currentOnlineCnt.setText("Online: "+online.size());
                 username = input.get();
                 break;
@@ -75,29 +78,61 @@ public class Controller implements Initializable {
         }
         chatContentList.setCellFactory(new MessageCellFactory());
         currentUsername.setText("Current User: "+username);
+        chatWith = new HashMap<>();
+//        开启新线程，不断监听server发过来的消息
+        clientThread = new ClientThread(username, ois, oos, chatContentList);
+        Thread thread = new Thread(clientThread);
+        thread.start();
     }
 
 
     /**
      * 接下来就是对不同的按键定义内容了，首先是发送消息，其次是接收消息
+     * 发送消息：
+     * 1. 选择聊天对象
+     * 2. 将页面切换到对应内容
+     * 3. 恢复聊天对象的记录
      */
     @FXML
-    public void createPrivateChat() {
+    public void createPrivateChat() throws IOException, ClassNotFoundException {
         AtomicReference<String> user = new AtomicReference<>();
 
         Stage stage = new Stage();
         ComboBox<String> userSel = new ComboBox<>();
 
-        // FIXME: get the user list from server, the current user's name should be filtered out 获得现有在线用户
-        userSel.getItems().addAll("Item 1", "Item 2", "Item 3");
+        clientThread.setGetting(false);
+        oos.writeObject(new Message("GET", new Date(), username, "SERVER", "onlineUsers"));
+        oos.flush();
+//        TODO 这里判断是否接收到了不好搞，万一处理的是上一个的怎么办，把动作放到另一个类也不好搞
+        Message rtn = new Message();
+        while(!clientThread.isGetting()) {
+            rtn = clientThread.getRes();
+        }
+        userSel.getItems().addAll(rtn.getData().split(","));
 
         Button okBtn = new Button("OK");
         okBtn.setOnAction(e -> {
-            sendTo = "yy";
             user.set(userSel.getSelectionModel().getSelectedItem());
+            if(user.get()!=null) {
+                sendTo = user.get();
+//            如果这个人已经聊过天，就显示之前的聊天记录
+                if (!chatWith.containsKey(sendTo)) {
+                    chatWith.put(sendTo, new ArrayList<>());
+                }
+                chatContentList.getItems().clear();
+
+//            TODO 不知道下面这一步恢复的顺序会不会乱
+                chatContentList.getItems().addAll(chatWith.get(sendTo));
+
+                try {
+                    oos.writeObject(new Message("CHAT", new Date(), username, sendTo, ""));
+                    oos.flush();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
             stage.close();
         });
-
 
         HBox box = new HBox(10);
         box.setAlignment(Pos.CENTER);
@@ -134,8 +169,9 @@ public class Controller implements Initializable {
     @FXML
     TextArea inputArea;
     @FXML
-    public void doSendMessage() throws InterruptedException {
+    public void doSendMessage() throws InterruptedException, IOException {
 //        FIXME alert点击确认关不掉，而且最好还是有个不阻塞的小提示框
+//        下面是关于输入的检查
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setOnCloseRequest(e->{
             e.consume();
@@ -150,9 +186,15 @@ public class Controller implements Initializable {
             alert.setContentText("Blank messages are not allowed.");
             alert.showAndWait();
         }else{
-            chatContentList.getItems().add(new Message(new Date(), username, sendTo, inputArea.getText().trim()));
+            Message msg = new Message("POST",new Date(), username, sendTo, inputArea.getText().trim());
+            chatContentList.getItems().add(msg);
+            chatWith.get(sendTo).add(msg);
+            oos.writeObject(msg);
+            oos.flush();
         }
+        inputArea.setText("");
     }
+
 
     /**
      * You may change the cell factory if you changed the design of {@code Message} model.
@@ -168,8 +210,8 @@ public class Controller implements Initializable {
                     super.updateItem(msg, empty);
                     if (empty || Objects.isNull(msg)) {
 //                        two lines below fix bug of showing msg repeated
-//                        setText(null);
-//                        setGraphic(null);
+                        setText(null);
+                        setGraphic(null);
                         return;
                     }
 

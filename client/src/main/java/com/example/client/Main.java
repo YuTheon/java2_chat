@@ -20,11 +20,6 @@ public class Main extends Application {
     public static void main(String[] args) throws IOException {
         final int PORT = 8895;
         socket = new Socket("localhost", PORT);
-//            InputStream is = s.getInputStream();
-//            OutputStream os = s.getOutputStream();
-//            in = new Scanner(is);
-//            out = new PrintWriter(os);
-
         launch();
     }
 //    进入launch之后到下面这个start，然后到setscene进入login，之后一直到show，关闭这个窗口launch才结束

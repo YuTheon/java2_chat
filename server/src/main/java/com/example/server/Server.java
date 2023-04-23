@@ -1,18 +1,23 @@
 package com.example.server;
 
-import com.example.common.Message;
+import com.example.common.Room;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
+/**
+ * FIXME 关于同时使用oos导致的传输问题，如果在自己电脑上点点应该不会有这样的问题，暂时不处理；处理的话就是将写操作都放在Server里，对每一个oos加一个锁
+ */
 public class Server  {
-    public static List<Room> availableRooms = new ArrayList<>();
     public static List<Room> usingRooms = new ArrayList<>();
     public static Map<String, Socket> onlineUsers = new HashMap<>();
+    public static Map<String, ObjectOutputStream> userOos = new HashMap<>();
+    public static Map<String, ObjectInputStream> userOis = new HashMap<>();
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         /**
          * 限制房间数，设定serverSocket，每监听到一个，就从堆里找一个可用的房间供两个人聊天
@@ -29,24 +34,15 @@ public class Server  {
             /**
              * 连接建立的时候：
              * - 分配房间
-             * - 找到对象，进行连接【server和子thread该怎么通信？】
+             * - 找到对象，进行连接【server和子thread该怎么通信？目前是利用static资源】
              */
             Socket socket = serverSocket.accept();
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
             /**
              * 下面进行直接连接
              */
-//            System.out.println(new Date());
-//            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-//            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-//            Message msg = (Message) in.readObject();
-//            System.out.println("msg type " + msg.getType());
-//            out.writeObject(new Message("POST", 1L, "yy", "yxy", "successful"));
-//            out.flush();
-//            放进去的应该是一个单独的房间，
-
-            Room room = chooseRoom(availableRooms, usingRooms);
-//            TODO 实现server和thread之间的通信，来确定在线人数
-            ServerThread serverThread = new ServerThread(socket, room, onlineUsers);
+            ServerThread serverThread = new ServerThread(socket, ois, oos);
             Thread thread = new Thread(serverThread);
             thread.start();
         }
