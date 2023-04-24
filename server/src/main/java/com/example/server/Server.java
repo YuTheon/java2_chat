@@ -14,6 +14,8 @@ import java.util.*;
  * FIXME 关于同时使用oos导致的传输问题，如果在自己电脑上点点应该不会有这样的问题，暂时不处理；处理的话就是将写操作都放在Server里，对每一个oos加一个锁
  */
 public class Server  {
+    public static int id=0;
+    public static Map<Integer, Room> findRoom = new HashMap<>();
     public static List<Room> usingRooms = new ArrayList<>();
     public static Map<String, Socket> onlineUsers = new HashMap<>();
     public static Map<String, ObjectOutputStream> userOos = new HashMap<>();

@@ -64,8 +64,14 @@ public class ClientThread implements Runnable{
                         case "POST":
                             doPOST(msg);
                             break;
+                        case "GROUP":
+                            doGROUP(msg);
+                            break;
                         case "RGET":
                             doRGET(msg);
+                            break;
+                        case "RCHAT":
+                            doRCHAT(msg);
                             break;
                         case "CHECKONLINE":
                             doCheckOnline(msg);
@@ -105,13 +111,37 @@ public class ClientThread implements Runnable{
             @Override
             public void run() {
                 Controller.updateChatList(chatList, msg);
-//                if(!Controller.chatRoom.containsKey(msg.getSentBy())){
-//                    Controller.chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
-//                }
-//                chatList.getItems().remove(Controller.chatRoom.get(msg.getSentBy()));
-//                Controller.chatRoom.get(msg.getSentBy()).getData().get(msg.getSendTo()).add(msg);
-//                Controller.chatRoom.get(msg.getSentBy()).setShowOnChatList(msg.getSentBy()+": "+msg.getData());
-//                chatList.getItems().add(0, Controller.chatRoom.get(msg.getSentBy()));
+            }
+        });
+    }
+
+    /**
+     * 收到建群邀请，
+     * 1. 建立信息-chatWith, Room-chatRoom,（检查是否已经建群）
+     * 2. 更新左侧消息框
+     *
+     * 这里的问题，就是发送方不能是群体，因为消息显示发送方，需要再加一个标识表示这是个群聊。回去得稍微整理一下
+     * @param msg
+     */
+    public void doGROUP(Message msg){
+        if(Controller.chatWith.containsKey(msg.getSentBy())) {
+            Controller.chatWith.get(msg.getSentBy()).add(msg);
+        }else{
+            Controller.chatWith.put(msg.getSentBy(), new ArrayList<>());
+            Controller.chatWith.get(msg.getSentBy()).add(msg);
+        }
+        if(Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    chatContentList.getItems().add(msg);
+                }
+            });
+        }
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Controller.updateChatList(chatList, msg);
             }
         });
     }
@@ -119,6 +149,9 @@ public class ClientThread implements Runnable{
     public void doRGET(Message msg){
         res = msg;
         getting = true;
+    }
+    public void doRCHAT(Message msg){
+        Controller.chatRoom.get(Controller.sendTo).setId(msg.getRoomId());
     }
 
     public void doCheckOnline(Message msg){
@@ -135,8 +168,14 @@ public class ClientThread implements Runnable{
         });
     }
     public void doPostFail(Message msg){
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setContentText(msg.getData());
-        alert.show();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setContentText(msg.getData());
+                alert.show();
+            }
+        });
+
     }
 }

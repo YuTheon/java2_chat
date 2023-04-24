@@ -13,8 +13,17 @@ public class Message implements Serializable {
     private String sendTo;
 
     private String data;
+    private int roomId;
 
     public Message(){}
+    public Message(String type, Date timestamp, String sentBy, String sendTo, String data, int id) {
+        this.type = type;
+        this.timestamp = timestamp;
+        this.sentBy = sentBy;
+        this.sendTo = sendTo;
+        this.data = data;
+        roomId = id;
+    }
 
     public Message(String type, Date timestamp, String sentBy, String sendTo, String data) {
         this.type = type;
@@ -34,6 +43,14 @@ public class Message implements Serializable {
     @Override
     public String toString(){
         return "Msg: type= " + type + "sentBy= " + sentBy + ", sendTo= " + sendTo + ", \ndata= " + data;
+    }
+
+    public int getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
     }
 
     public Date getTimestamp() {

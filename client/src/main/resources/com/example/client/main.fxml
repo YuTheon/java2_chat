@@ -17,6 +17,12 @@
         <ListView fx:id="chatList" prefHeight="200.0" prefWidth="200.0" />
         <SplitPane dividerPositions="0.85" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
             <ListView fx:id="chatContentList" prefHeight="200.0" prefWidth="200.0" />
+            <MenuBar VBox.vgrow="NEVER">
+                <Menu mnemonicParsing="false" text="Other">
+                    <MenuItem mnemonicParsing="false" onAction="#sendEmoij" text="send Emoij" />
+                    <MenuItem mnemonicParsing="false" onAction="#createGroupChat" text="upload file" />
+                </Menu>
+            </MenuBar>
             <HBox prefHeight="100.0" prefWidth="200.0">
                 <TextArea fx:id="inputArea" prefHeight="138.0" prefWidth="624.0" HBox.hgrow="ALWAYS" />
                 <Button maxHeight="1.7976931348623157E308" mnemonicParsing="false" onAction="#doSendMessage" prefHeight="80.0" prefWidth="114.0" text="Send" HBox.hgrow="ALWAYS" />

@@ -3,6 +3,12 @@ package com.example.client;
 import com.example.common.Message;
 import com.example.common.Room;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -10,6 +16,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -154,21 +161,11 @@ public class Controller implements Initializable {
                 }
                 changeChatContentList(chatContentList, sendTo);
 //                如果没有聊过，就新建Room
-
 //                FIXME 这一步没有删掉还是？
-                System.out.println("time to delete");
-//                try {
-//                    Thread.sleep(1000);
-//                    chatList.getItems().remove(chatRoom.get(sendTo));//TODO 这里的ROOM是什么，去
-//                    System.out.println("has deleted");
-//                    Thread.sleep(1000);
-//                    chatList.getItems().add(0, chatRoom.get(sendTo));
-//                } catch (InterruptedException ex) {
-//                    throw new RuntimeException(ex);
-//                }
-                System.out.println("sendTo: "+sendTo);
-                System.out.println("chatList : "+ chatRoom.keySet().stream().collect(Collectors.joining(", ")));
-                System.out.println(chatRoom.get(sendTo).getData());
+//                System.out.println("time to delete");
+//                System.out.println("sendTo: "+sendTo);
+//                System.out.println("chatList : "+ chatRoom.keySet().stream().collect(Collectors.joining(", ")));
+//                System.out.println(chatRoom.get(sendTo).getData());
                 chatList.getItems().remove(chatRoom.get(sendTo));
                 chatList.getItems().add(0, chatRoom.get(sendTo));
 
@@ -205,7 +202,75 @@ public class Controller implements Initializable {
      * UserA, UserB (2)
      */
     @FXML
-    public void createGroupChat() {
+    public void createGroupChat() throws IOException {
+        AtomicReference<Set<String>> users = new AtomicReference<>();
+        users.set(new HashSet<>());
+
+        Stage stage = new Stage();
+
+        clientThread.setGetting(false);
+        oos.writeObject(new Message("GET", new Date(), username, "SERVER", "onlineUsers"));
+        oos.flush();
+//        TODO 这里判断是否接收到了不好搞，万一处理的是上一个的怎么办，把动作放到另一个类也不好搞
+        Message rtn = new Message();
+        while(!clientThread.isGetting()) {
+            rtn = clientThread.getRes();
+        }
+        List<String> online = Arrays.stream(rtn.getData().split(",")).toList();
+
+        ObservableList<String> items = FXCollections.observableArrayList(online);
+        ListView<String> listView = new ListView<>(items);
+        listView.setCellFactory(CheckBoxListCell.forListView(new Callback<String, ObservableValue<Boolean>>() {
+            @Override
+            public ObservableValue<Boolean> call(String item) {
+                BooleanProperty observable = new SimpleBooleanProperty();
+                observable.addListener((obs, wasSelected, isNowSelected) -> {
+//                    System.out.println("Check box for " + item + " changed from " + wasSelected + " to " + isNowSelected);
+                    if(isNowSelected){
+                        users.get().add(item);
+                    }else{
+                        users.get().remove(item);
+                    }
+                });
+                return observable;
+            }
+        }));
+
+
+        Button okBtn = new Button("OK");
+        okBtn.setOnAction(e->{
+            try {
+                oos.writeObject(new Message("GROUP", new Date(), username, "SERVER", users.get().stream().collect(Collectors.joining(","))));
+                oos.flush();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            System.out.println(users.get());
+
+//            右边聊天框以及左边消息集，这里对于群聊就是新建，(也不能新建，因为名字是唯一标识符)，怎么定加入chatWith的set呢
+            users.get().add(username);
+            List<String> groupMem = users.get().stream().sorted().toList();
+            String groupName = String.join(",", groupMem);
+            sendTo = groupName;
+            if(!chatWith.containsKey(groupName)) {
+                chatWith.put(groupName, new ArrayList<>());
+                chatRoom.put(groupName, new Room(username, groupMem));
+                chatList.getItems().add(0, chatRooms.get(groupName));
+            }
+            chatContentList.getItems().clear();
+            chatContentList.getItems().addAll(chatWith.get(groupName));
+
+            stage.close();
+        });
+
+
+
+        HBox box = new HBox(20);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(20, 20, 20, 20));
+        box.getChildren().addAll(listView, okBtn);
+        stage.setScene(new Scene(box));
+        stage.showAndWait();
     }
 
     /**
@@ -304,6 +369,26 @@ public class Controller implements Initializable {
         sendTo = room.getName();
         chatContentList.getItems().clear();
         chatContentList.getItems().addAll(chatWith.get(sendTo));
+    }
+
+    @FXML
+    public void sendEmoij(){
+        AtomicReference<String> emoij = new AtomicReference<>();
+        Stage stage = new Stage();
+        ComboBox<String> emoijSel = new ComboBox<>();
+        emoijSel.getItems().addAll("🤣", "😊","😂","😘","😁","👍","🙌","😜");
+        Button okBtn = new Button("OK");
+        okBtn.setOnAction(e -> {
+            emoij.set(emoijSel.getSelectionModel().getSelectedItem());
+            inputArea.setText(emoij.get());
+            stage.close();
+        });
+        HBox box = new HBox(10);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(20, 20, 20, 20));
+        box.getChildren().addAll(emoijSel, okBtn);
+        stage.setScene(new Scene(box));
+        stage.showAndWait();
     }
 
     /**

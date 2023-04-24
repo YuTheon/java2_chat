@@ -8,7 +8,9 @@ import java.util.stream.Collectors;
 
 
 public class Room {
+    private int id;
     private String name;
+    private String host;
     private int memberNum;
     private int memNumLim;
     private RoomStatus status;
@@ -32,10 +34,25 @@ public class Room {
         memberNum = 2;
         memNumLim = 100;
         status = RoomStatus.using;
+        host = name1;
         name = name2;
         data = new HashMap<>();
         data.put(name1, new ArrayList<>());
         data.put(name2, new ArrayList<>());
+    }
+    public Room(String host, List<String> cus){
+        memberNum = cus.size()+1;
+        memNumLim = 100;
+        status = RoomStatus.using;
+        this.host = host;
+        data = new HashMap<>();
+        data.put(host, new ArrayList<>());
+        cus.stream().sorted().forEach(s-> data.put(s, new ArrayList<>()));
+        if(cus.size() > 2) {
+            name = cus.stream().sorted().limit(3).collect(Collectors.joining(",")) + "..." + "(" + memberNum + ")";
+        }else{
+            name = cus.stream().sorted().collect(Collectors.joining(","))+","+host;
+        }
     }
 
     public void clean(){
@@ -60,6 +77,15 @@ public class Room {
         }
         return name;
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public void setName(String name){
         this.name = name;
     }
