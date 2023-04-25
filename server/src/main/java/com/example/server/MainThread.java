@@ -16,8 +16,9 @@ public class MainThread implements Initializable {
         thread.start();
         System.out.println("thread start");
     }
+
     @FXML
-    public void closeServer(){
+    public void closeServer() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText("click x on top-right :)");
         alert.show();

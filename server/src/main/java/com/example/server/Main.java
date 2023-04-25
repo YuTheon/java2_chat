@@ -34,7 +34,7 @@ public class Main extends Application {
                  * 2. 保存所有东西
                  * 3. 关闭所有socket
                  */
-                Server.userOos.values().forEach(s->{
+                Server.userOos.values().forEach(s -> {
                     try {
                         s.writeObject(new Message("SERVERQUIT", new Date(), "", "server", ""));
                         s.flush();
@@ -43,21 +43,21 @@ public class Main extends Application {
                     }
                 });
                 Thread.sleep(100);
-                Server.userOos.values().forEach(s-> {
+                Server.userOos.values().forEach(s -> {
                     try {
                         s.close();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
-                Server.userOis.values().forEach(s->{
+                Server.userOis.values().forEach(s -> {
                     try {
                         s.close();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
-                Server.onlineUsers.values().forEach(s->{
+                Server.onlineUsers.values().forEach(s -> {
                     try {
                         s.close();
                     } catch (IOException e) {

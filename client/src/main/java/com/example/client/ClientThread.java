@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-public class ClientThread implements Runnable{
+public class ClientThread implements Runnable {
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
     private ListView<Message> chatContentList;
@@ -23,15 +23,19 @@ public class ClientThread implements Runnable{
     private String userName;
     private Message res;
     private boolean getting = false;
-    public ClientThread(){}
-    public ClientThread(String userName, ObjectInputStream ois, ObjectOutputStream oos, ListView<Message> chatContentList, ListView<Room> chatList){
+
+    public ClientThread() {
+    }
+
+    public ClientThread(String userName, ObjectInputStream ois, ObjectOutputStream oos, ListView<Message> chatContentList, ListView<Room> chatList) {
         this.userName = userName;
         this.ois = ois;
         this.oos = oos;
         this.chatContentList = chatContentList;
         this.chatList = chatList;
     }
-    public Message getRes(){
+
+    public Message getRes() {
         return res;
     }
 
@@ -45,6 +49,7 @@ public class ClientThread implements Runnable{
 
 
     private volatile boolean quit = false;
+
     @Override
     public void run() {
         try {
@@ -54,7 +59,7 @@ public class ClientThread implements Runnable{
              */
             Object obj;
             Message msg;
-            while (!quit){
+            while (!quit) {
                 obj = ois.readObject();
                 msg = (Message) obj;
                 System.out.println(msg);
@@ -89,31 +94,32 @@ public class ClientThread implements Runnable{
                     }
                 }
             }
-        }catch (IOException | ClassNotFoundException exception){
+        } catch (IOException | ClassNotFoundException exception) {
             exception.printStackTrace();
         }
     }
 
     /**
      * 这里也相当与接收信息，需要更新chatList
+     *
      * @param msg
      */
-    public void doPOST(Message msg){
+    public void doPOST(Message msg) {
 //        TODO 这里关键在于msg sendBy是
         List<String> sendTos = Arrays.stream(msg.getSendTo().split(",")).toList();
         String msgName;
-        if(sendTos.size()==1){
+        if (sendTos.size() == 1) {
             msgName = msg.getSentBy();
-        }else{
+        } else {
             msgName = msg.getSendTo();
         }
-        if(Controller.chatWith.containsKey(msgName)) {
+        if (Controller.chatWith.containsKey(msgName)) {
             Controller.chatWith.get(msgName).add(msg);
-        }else{
+        } else {
             Controller.chatWith.put(msgName, new ArrayList<>());
             Controller.chatWith.get(msgName).add(msg);
         }
-        if(Controller.sendTo != null && Controller.sendTo.equals(msgName)) {
+        if (Controller.sendTo != null && Controller.sendTo.equals(msgName)) {
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
@@ -133,19 +139,20 @@ public class ClientThread implements Runnable{
      * 收到建群邀请，
      * 1. 建立信息-chatWith, Room-chatRoom,（检查是否已经建群）
      * 2. 更新左侧消息框
-     *
+     * <p>
      * 这里的问题，就是发送方不能是群体，因为消息显示发送方，需要再加一个标识表示这是个群聊。回去得稍微整理一下
+     *
      * @param msg
      */
-    public void doGROUP(Message msg){
-        if(Controller.chatWith.containsKey(msg.getSentBy())) {
+    public void doGROUP(Message msg) {
+        if (Controller.chatWith.containsKey(msg.getSentBy())) {
             Controller.chatWith.get(msg.getSentBy()).add(msg);
-        }else{
+        } else {
             Controller.chatWith.put(msg.getSentBy(), new ArrayList<>());
             Controller.chatWith.get(msg.getSentBy()).add(msg);
         }
 //        Message ms = new Message(msg.getType(), msg.getTimestamp(),  "SERVER", msg.getSendTo(), msg.getData(), msg.getRoomId());
-        if(Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
+        if (Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
@@ -161,11 +168,12 @@ public class ClientThread implements Runnable{
         });
     }
 
-    public void doRGET(Message msg){
+    public void doRGET(Message msg) {
         res = msg;
         getting = true;
     }
-    public void doRCHAT(Message msg){
+
+    public void doRCHAT(Message msg) {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
@@ -175,7 +183,7 @@ public class ClientThread implements Runnable{
 
     }
 
-    public void doCheckOnline(Message msg){
+    public void doCheckOnline(Message msg) {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
@@ -188,7 +196,8 @@ public class ClientThread implements Runnable{
             }
         });
     }
-    public void doPostFail(Message msg){
+
+    public void doPostFail(Message msg) {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
@@ -198,7 +207,8 @@ public class ClientThread implements Runnable{
             }
         });
     }
-    public void doSERQ(){
+
+    public void doSERQ() {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {

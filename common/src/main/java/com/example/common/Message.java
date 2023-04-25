@@ -15,7 +15,9 @@ public class Message implements Serializable {
     private String data;
     private int roomId;
 
-    public Message(){}
+    public Message() {
+    }
+
     public Message(String type, Date timestamp, String sentBy, String sendTo, String data, int id) {
         this.type = type;
         this.timestamp = timestamp;
@@ -40,8 +42,9 @@ public class Message implements Serializable {
         this.sendTo = sendTo;
         this.data = data;
     }
+
     @Override
-    public String toString(){
+    public String toString() {
         return "Msg: type= " + type + " sentBy= " + sentBy + " sendTo= " + sendTo + " \ndata= " + data;
     }
 
@@ -72,6 +75,7 @@ public class Message implements Serializable {
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }

@@ -4,8 +4,6 @@ import com.example.common.Message;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,11 +13,15 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.Scanner;
 
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
 public class Main extends Application {
-//    TODO 不知道这里private怎么在Controller访问，暂时先改成public了
+    //    TODO 不知道这里private怎么在Controller访问，暂时先改成public了
     public static Socket socket;
     public static Scanner in;
     public static PrintWriter out;
+
     public static void main(String[] args) throws IOException {
         final int PORT = 8895;
         socket = new Socket("localhost", PORT);
@@ -36,7 +38,8 @@ public class Main extends Application {
         stage.setOnCloseRequest(windowEvent -> {
 
             try {
-                Controller.oos.writeObject(new Message("QUIT", new Date(), Controller.username, "SERVER", ""));
+                Controller.oos.writeObject(new Message("QUIT", new Date(),
+                        Controller.username, "SERVER", ""));
                 Controller.oos.flush();
                 Thread.sleep(100);
                 Controller.oos.close();

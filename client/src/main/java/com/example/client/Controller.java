@@ -44,10 +44,10 @@ public class Controller implements Initializable {
     @FXML
     ListView<Room> chatList;
 
-//    上面是两人聊天，通过人可以唯一确定；下面是群聊，参加人之外需要一点特殊标记-组名
+    //上面是两人聊天，通过人可以唯一确定；下面是群聊，参加人之外需要一点特殊标记-组名
     static Map<String, Room> chatRoom;
     static Map<String, Room> chatRooms;
-//  这里是？？
+    //这里是？？
     static Map<String, List<Message>> chatWith;
 
     static String username;
@@ -60,9 +60,10 @@ public class Controller implements Initializable {
     static boolean QUIT = false;
 
     /**
-     * 这里检查了用户输入的名字是否已经在线
-     * @param url
-     * @param resourceBundle
+     * 这里检查了用户输入的名字是否已经在线。
+     *
+     * @param url            url
+     * @param resourceBundle res
      */
     @lombok.SneakyThrows
     @Override
@@ -76,8 +77,8 @@ public class Controller implements Initializable {
 
         oos = new ObjectOutputStream(socket.getOutputStream());
         ois = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-        while(true) {
-            if(input.isPresent()) {
+        while (true) {
+            if (input.isPresent()) {
                 if (!input.get().isEmpty()) {
                     oos.writeObject(new Message("GET", new Date(), input.get(), "SERVER", "join"));
                     oos.flush();
@@ -92,17 +93,16 @@ public class Controller implements Initializable {
                     currentOnlineCnt.setText("Online: " + online.size());
                     username = input.get();
                     break;
-                }else {
+                } else {
                     QUIT = true;
                 }
-            }
-            else {
+            } else {
                 QUIT = true;
                 Platform.exit();
                 break;
             }
         }
-        if(QUIT){
+        if (QUIT) {
             return;
 //            Stage stage = (Stage)chatList.getScene().getWindow();
 ////            Stage stage = (Stage)chatContentList.getScene().getWindow();
@@ -110,7 +110,7 @@ public class Controller implements Initializable {
         }
         chatContentList.setCellFactory(new MessageCellFactory());
         chatList.setCellFactory(new ChatCellFactory());
-        currentUsername.setText("Current User: "+username);
+        currentUsername.setText("Current User: " + username);
         chatWith = new HashMap<>();
         chatRoom = new HashMap<>();
         chatRooms = new HashMap<>();
@@ -131,7 +131,6 @@ public class Controller implements Initializable {
      * 1. 两个客户端同时打开私聊对象选择框，有一个的会无法响应
      */
 //    TODO 这里ROOM注意，在之前聊天的时候都要在这里面加入消息，前面的list最好改成Map<String, Room>;另外String好像也不是唯一标识码，但是这里暂时这么设定
-
     @FXML
     public void createPrivateChat() throws IOException, ClassNotFoundException {
         AtomicReference<String> user = new AtomicReference<>();
@@ -144,7 +143,7 @@ public class Controller implements Initializable {
         oos.flush();
 //        TODO 这里判断是否接收到了不好搞，万一处理的是上一个的怎么办，把动作放到另一个类也不好搞
         Message rtn = new Message();
-        while(!clientThread.isGetting()) {
+        while (!clientThread.isGetting()) {
             rtn = clientThread.getRes();
         }
         userSel.getItems().addAll(rtn.getData().split(","));
@@ -152,7 +151,7 @@ public class Controller implements Initializable {
         Button okBtn = new Button("OK");
         okBtn.setOnAction(e -> {
             user.set(userSel.getSelectionModel().getSelectedItem());
-            if(user.get()!=null) {
+            if (user.get() != null) {
                 sendTo = user.get();
 //            如果这个人已经聊过天，就显示之前的聊天记录，
                 if (!chatWith.containsKey(sendTo)) {
@@ -213,7 +212,7 @@ public class Controller implements Initializable {
         oos.flush();
 //        TODO 这里判断是否接收到了不好搞，万一处理的是上一个的怎么办，把动作放到另一个类也不好搞
         Message rtn = new Message();
-        while(!clientThread.isGetting()) {
+        while (!clientThread.isGetting()) {
             rtn = clientThread.getRes();
         }
         List<String> online = Arrays.stream(rtn.getData().split(",")).toList();
@@ -226,9 +225,9 @@ public class Controller implements Initializable {
                 BooleanProperty observable = new SimpleBooleanProperty();
                 observable.addListener((obs, wasSelected, isNowSelected) -> {
 //                    System.out.println("Check box for " + item + " changed from " + wasSelected + " to " + isNowSelected);
-                    if(isNowSelected){
+                    if (isNowSelected) {
                         users.get().add(item);
-                    }else{
+                    } else {
                         users.get().remove(item);
                     }
                 });
@@ -238,7 +237,7 @@ public class Controller implements Initializable {
 
 
         Button okBtn = new Button("OK");
-        okBtn.setOnAction(e->{
+        okBtn.setOnAction(e -> {
             try {
                 oos.writeObject(new Message("GROUP", new Date(), username, "SERVER", users.get().stream().collect(Collectors.joining(","))));
                 oos.flush();
@@ -252,7 +251,7 @@ public class Controller implements Initializable {
             List<String> groupMem = users.get().stream().sorted().toList();
             String groupName = String.join(",", groupMem);
             sendTo = groupName;
-            if(!chatWith.containsKey(groupName)) {
+            if (!chatWith.containsKey(groupName)) {
                 chatWith.put(groupName, new ArrayList<>());
                 chatRoom.put(groupName, new Room(username, groupMem));
                 chatRoom.get(groupName).setShowOnChatList("server: no message");
@@ -264,7 +263,6 @@ public class Controller implements Initializable {
 
             stage.close();
         });
-
 
 
         HBox box = new HBox(20);
@@ -283,25 +281,26 @@ public class Controller implements Initializable {
      */
     @FXML
     TextArea inputArea;
+
     @FXML
     public void doSendMessage() throws InterruptedException, IOException {
 //        FIXME alert点击确认关不掉，而且最好还是有个不阻塞的小提示框
 //        下面是关于输入的检查
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setOnCloseRequest(e->{
+        alert.setOnCloseRequest(e -> {
             e.consume();
             alert.close();
         });
-        if(sendTo == null){
+        if (sendTo == null) {
             alert.setContentText("choose someone to chat!");
             alert.show();
             return;
         }
-        if (inputArea.getText().trim().isEmpty()){
+        if (inputArea.getText().trim().isEmpty()) {
             alert.setContentText("Blank messages are not allowed.");
             alert.showAndWait();
-        }else{
-            Message msg = new Message("POST",new Date(), username, sendTo, inputArea.getText().trim());
+        } else {
+            Message msg = new Message("POST", new Date(), username, sendTo, inputArea.getText().trim());
             /**
              * 发送的时候
              * 1. 更新右边显示
@@ -329,27 +328,30 @@ public class Controller implements Initializable {
 
     /**
      * 增加消息
+     *
      * @param msg
      */
-    public static void updateChatContentList(ListView<Message> chatContentList, Message msg){
+    public static void updateChatContentList(ListView<Message> chatContentList, Message msg) {
         chatContentList.getItems().add(msg);
     }
 
     /**
      * 更换显示内容
+     *
      * @param sendTo
      */
-    public static void changeChatContentList(ListView<Message> chatContentList, String sendTo){
+    public static void changeChatContentList(ListView<Message> chatContentList, String sendTo) {
         chatContentList.getItems().clear();
         chatContentList.getItems().addAll(chatWith.get(sendTo));
     }
 
     /**
      * 这里是接收到消息之后的全部吗
+     *
      * @param chatList
      * @param msg
      */
-    public static void updateChatList(ListView<Room> chatList, Message msg){
+    public static void updateChatList(ListView<Room> chatList, Message msg) {
 //        if(chatWith.containsKey(msg.getSentBy())){
 //            chatWith.get(msg.getSentBy()).add(msg);
 //        }else{
@@ -359,18 +361,18 @@ public class Controller implements Initializable {
 //        System.out.println("updateChatList:280");
         List<String> sendTos = Arrays.stream(msg.getSendTo().split(",")).toList();
         String msgName;
-        if(sendTos.size()==1){
+        if (sendTos.size() == 1) {
             msgName = msg.getSentBy();
-        }else{
+        } else {
             msgName = msg.getSendTo();
         }
-        if(!chatRoom.containsKey(msgName)){
-            System.out.println("contain no name: "+msgName);
+        if (!chatRoom.containsKey(msgName)) {
+            System.out.println("contain no name: " + msgName);
             chatRoom.put(msgName, new Room(msg.getSendTo(), msg.getSentBy()));
             chatRoom.get(msgName).addMsg(msg);
             chatRoom.get(msgName).setGetInfo(1);
             chatList.getItems().add(0, chatRoom.get(msgName));
-        }else {
+        } else {
             System.out.println("contain name");
             chatList.getItems().remove(chatRoom.get(msgName));
             chatRoom.get(msgName).addMsg(msg);
@@ -380,9 +382,9 @@ public class Controller implements Initializable {
         }
     }
 
-    public void updateChatContentClick(Room room){
+    public void updateChatContentClick(Room room) {
         sendTo = room.getName();
-        if(chatWith.get(sendTo) == null){
+        if (chatWith.get(sendTo) == null) {
             sendTo = room.getData().keySet().stream().sorted().collect(Collectors.joining(","));
         }
         System.out.println("in update chatContentClick");
@@ -396,11 +398,11 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    public void sendEmoij(){
+    public void sendEmoij() {
         AtomicReference<String> emoij = new AtomicReference<>();
         Stage stage = new Stage();
         ComboBox<String> emoijSel = new ComboBox<>();
-        emoijSel.getItems().addAll("🤣", "😊","😂","😘","😁","👍","🙌","😜");
+        emoijSel.getItems().addAll("🤣", "😊", "😂", "😘", "😁", "👍", "🙌", "😜");
         Button okBtn = new Button("OK");
         okBtn.setOnAction(e -> {
             emoij.set(emoijSel.getSelectionModel().getSelectedItem());
@@ -416,7 +418,7 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    public void groupMember(){
+    public void groupMember() {
         Stage stage = new Stage();
         ComboBox<String> groupM = new ComboBox<>();
         List<String> groupMems = Arrays.stream(sendTo.split(",")).toList();
@@ -484,10 +486,10 @@ public class Controller implements Initializable {
 
     private class ChatCellFactory implements Callback<ListView<Room>, ListCell<Room>> {
         @Override
-        public ListCell<Room> call(ListView<Room> param){
-            return new ListCell<>(){
+        public ListCell<Room> call(ListView<Room> param) {
+            return new ListCell<>() {
                 @Override
-                public void updateItem(Room room, boolean empty){
+                public void updateItem(Room room, boolean empty) {
                     super.updateItem(room, empty);
                     if (empty || Objects.isNull(room)) {
                         setText(null);
@@ -507,9 +509,9 @@ public class Controller implements Initializable {
                     nameLabel.setStyle("-fx-border-color: gray;-fx-font-size: 14");
 //                    msgLabel.setPrefHeight(15);
                     msgLabel.setStyle("-fx-font-size: 11;");
-                    if(room.getGetInfo()==1){
+                    if (room.getGetInfo() == 1) {
                         msgLabel.setStyle("-fx-background-color: red");
-                    }else{
+                    } else {
                         msgLabel.setStyle("-fx-background-color: white");
                     }
 

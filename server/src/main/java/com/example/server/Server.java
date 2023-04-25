@@ -25,7 +25,7 @@ import java.util.*;
  * FIXME 关于同时使用oos导致的传输问题，如果在自己电脑上点点应该不会有这样的问题，暂时不处理；处理的话就是将写操作都放在Server里，对每一个oos加一个锁
  */
 public class Server implements Runnable {
-    public static int id=0;
+    public static int id = 0;
     public static Map<Integer, Room> findRoom = new HashMap<>();
     public static List<Room> usingRooms = new ArrayList<>();
     public static Map<String, Socket> onlineUsers = new HashMap<>();
@@ -55,7 +55,7 @@ public class Server implements Runnable {
         ObjectInputStream ois;
         ObjectOutputStream oos;
         System.out.println(serverSocket.getLocalPort());
-        while (true){
+        while (true) {
             /**
              * 连接建立的时候：
              * - 分配房间
@@ -79,14 +79,14 @@ public class Server implements Runnable {
     }
 
 
-    public static List<String> checkOnline(){
+    public static List<String> checkOnline() {
         List<String> name = onlineUsers.keySet().stream().toList();
         List<String> res = new ArrayList<>();
-        for(String n : name){
-            if(onlineUsers.get(n).isConnected()){
+        for (String n : name) {
+            if (onlineUsers.get(n).isConnected()) {
                 res.add(n);
 //                System.out.println("online "+n);
-            }else{
+            } else {
 //                System.out.println("remove "+n);
                 onlineUsers.remove(n);
                 userOos.remove(n);
@@ -98,8 +98,8 @@ public class Server implements Runnable {
     }
 
 
-    public static Room chooseRoom(List<Room> aRooms, List<Room> uRooms){
-        if(aRooms.size()==0){
+    public static Room chooseRoom(List<Room> aRooms, List<Room> uRooms) {
+        if (aRooms.size() == 0) {
             Room room = new Room();
             uRooms.add(room);
             return room;
