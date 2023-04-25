@@ -255,10 +255,10 @@ public class Controller implements Initializable {
             if(!chatWith.containsKey(groupName)) {
                 chatWith.put(groupName, new ArrayList<>());
                 chatRoom.put(groupName, new Room(username, groupMem));
+                chatRoom.get(groupName).setShowOnChatList("server: no message");
+                chatList.getItems().add(0, chatRoom.get(groupName));
             }
             System.out.println("create group " + groupName);
-            chatRoom.get(groupName).setShowOnChatList("server: no message");
-            chatList.getItems().add(0, chatRoom.get(groupName));
             chatContentList.getItems().clear();
             chatContentList.getItems().addAll(chatWith.get(groupName));
 
@@ -312,12 +312,13 @@ public class Controller implements Initializable {
             chatContentList.getItems().add(msg);
             chatWith.get(sendTo).add(msg);
             System.out.println("in do send");
-            System.out.println(chatRoom.get(sendTo).getData());
-            System.out.println("in send msg, sendTo: " + sendTo);
-
-            System.out.println("in chatRoom" + chatRoom.keySet().toString());
+            System.out.println(msg);
+//            System.out.println(chatRoom.get(sendTo).getData());
+//            System.out.println("in send msg, sendTo: " + sendTo);
+//            System.out.println("in chatRoom" + chatRoom.keySet().toString());
             chatList.getItems().remove(chatRoom.get(sendTo));
             chatRoom.get(sendTo).addMsg(msg);
+            chatRoom.get(sendTo).setGetInfo(0);
             chatList.getItems().add(0, chatRoom.get(sendTo));
 
             oos.writeObject(msg);
@@ -367,11 +368,13 @@ public class Controller implements Initializable {
             System.out.println("contain no name: "+msgName);
             chatRoom.put(msgName, new Room(msg.getSendTo(), msg.getSentBy()));
             chatRoom.get(msgName).addMsg(msg);
+            chatRoom.get(msgName).setGetInfo(1);
             chatList.getItems().add(0, chatRoom.get(msgName));
         }else {
             System.out.println("contain name");
             chatList.getItems().remove(chatRoom.get(msgName));
             chatRoom.get(msgName).addMsg(msg);
+            chatRoom.get(msgName).setGetInfo(1);
 //            chatRoom.get(msg.getSentBy()).getData().get(msg.getSentBy()).add(msg);
             chatList.getItems().add(0, chatRoom.get(msgName));
         }
@@ -381,6 +384,9 @@ public class Controller implements Initializable {
         sendTo = room.getName();
         chatContentList.getItems().clear();
         chatContentList.getItems().addAll(chatWith.get(sendTo));
+        chatList.getItems().remove(room);
+        room.setGetInfo(0);
+        chatList.getItems().add(0, room);
     }
 
     @FXML
@@ -434,6 +440,10 @@ public class Controller implements Initializable {
                         wrapper.setAlignment(Pos.TOP_RIGHT);
                         wrapper.getChildren().addAll(msgLabel, nameLabel);
                         msgLabel.setPadding(new Insets(0, 20, 0, 0));
+                    } else if ("SERVER".equals(msg.getSentBy())) {
+                        wrapper.setAlignment(Pos.TOP_CENTER);
+                        wrapper.getChildren().addAll(msgLabel, nameLabel);
+                        msgLabel.setPadding(new Insets(0, 20, 0, 0));
                     } else {
                         wrapper.setAlignment(Pos.TOP_LEFT);
                         wrapper.getChildren().addAll(nameLabel, msgLabel);
@@ -469,7 +479,14 @@ public class Controller implements Initializable {
 
                     nameLabel.setPrefSize(100, 20);
                     nameLabel.setWrapText(true);
-                    nameLabel.setStyle("-fx-border-color: gray;");
+                    nameLabel.setStyle("-fx-border-color: gray;-fx-font-size: 14");
+//                    msgLabel.setPrefHeight(15);
+                    msgLabel.setStyle("-fx-font-size: 11;");
+                    if(room.getGetInfo()==1){
+                        msgLabel.setStyle("-fx-background-color: red");
+                    }else{
+                        msgLabel.setStyle("-fx-background-color: white");
+                    }
 
                     wrapper.setAlignment(Pos.TOP_LEFT);
                     wrapper.getChildren().addAll(nameLabel, msgLabel);

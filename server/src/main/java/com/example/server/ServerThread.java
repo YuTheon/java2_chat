@@ -131,9 +131,17 @@ public class ServerThread implements Runnable{
     public void doPOST(Message msg) throws IOException {
 //        接下来的操作，就是在房间里记录，然后发送信息给对方（对方也有房间或者什么作为本地缓存）
         String sendBy = msg.getSentBy(), sendTo = msg.getSendTo();
-        List<String> sendTos = Arrays.stream(sendTo.split(",")).toList();
+        List<String> sendTos = new ArrayList<>(Arrays.stream(sendTo.split(",")).toList());
         if(room == null){
-            Optional<Room> room1 = Server.usingRooms.stream().filter(s->sendTo.equals(
+            if(!sendBy.contains(",") && !sendTo.contains(",")){
+                sendTos.add(sendBy);
+                sendTo = sendTos.stream().sorted().collect(Collectors.joining(","));
+            }
+            System.out.println("while doPost room is null");
+            System.out.println(msg);
+            Server.usingRooms.forEach(s-> System.out.println(s.getData().keySet()+"   room name:"+s.getName()));
+            String finalSendTo = sendTo;
+            Optional<Room> room1 = Server.usingRooms.stream().filter(s-> finalSendTo.equals(
                     s.getData().keySet().stream().sorted().collect(Collectors.joining(",")))).findFirst();
             if(room1.isEmpty()){
                 oos.writeObject(new Message("POST_FAIL", new Date(), "SERVER", sendBy, "there is no room"));

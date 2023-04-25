@@ -16,6 +16,7 @@ public class Room {
     private RoomStatus status;
     private Map<String, List<Message>> data;
     private String showOnChatList;
+    private int getInfo = 0;
 
     public Room(){
         memberNum = 0;
@@ -53,6 +54,14 @@ public class Room {
         }else{
             name = cus.stream().sorted().collect(Collectors.joining(","))+","+host;
         }
+    }
+
+    public int getGetInfo() {
+        return getInfo;
+    }
+
+    public void setGetInfo(int getInfo) {
+        this.getInfo = getInfo;
     }
 
     public void clean(){
