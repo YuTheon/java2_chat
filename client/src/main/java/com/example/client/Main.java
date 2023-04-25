@@ -46,7 +46,7 @@ public class Main extends Application {
                 Controller.ois.close();
                 Controller.socket.close();
             } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
             }
             Platform.exit();
             stage.close();
