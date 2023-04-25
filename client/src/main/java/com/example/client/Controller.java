@@ -255,8 +255,10 @@ public class Controller implements Initializable {
             if(!chatWith.containsKey(groupName)) {
                 chatWith.put(groupName, new ArrayList<>());
                 chatRoom.put(groupName, new Room(username, groupMem));
-                chatList.getItems().add(0, chatRooms.get(groupName));
             }
+            System.out.println("create group " + groupName);
+            chatRoom.get(groupName).setShowOnChatList("server: no message");
+            chatList.getItems().add(0, chatRoom.get(groupName));
             chatContentList.getItems().clear();
             chatContentList.getItems().addAll(chatWith.get(groupName));
 
@@ -311,6 +313,9 @@ public class Controller implements Initializable {
             chatWith.get(sendTo).add(msg);
             System.out.println("in do send");
             System.out.println(chatRoom.get(sendTo).getData());
+            System.out.println("in send msg, sendTo: " + sendTo);
+
+            System.out.println("in chatRoom" + chatRoom.keySet().toString());
             chatList.getItems().remove(chatRoom.get(sendTo));
             chatRoom.get(sendTo).addMsg(msg);
             chatList.getItems().add(0, chatRoom.get(sendTo));
@@ -351,17 +356,24 @@ public class Controller implements Initializable {
 //            chatWith.get(msg.getSentBy()).add(msg);
 //        }
 //        System.out.println("updateChatList:280");
-        if(!chatRoom.containsKey(msg.getSentBy())){
-//            System.out.println("contain no name");
-            chatRoom.put(msg.getSentBy(), new Room(msg.getSendTo(), msg.getSentBy()));
-            chatRoom.get(msg.getSentBy()).addMsg(msg);
-            chatList.getItems().add(0, chatRoom.get(msg.getSentBy()));
+        List<String> sendTos = Arrays.stream(msg.getSendTo().split(",")).toList();
+        String msgName;
+        if(sendTos.size()==1){
+            msgName = msg.getSentBy();
+        }else{
+            msgName = msg.getSendTo();
+        }
+        if(!chatRoom.containsKey(msgName)){
+            System.out.println("contain no name: "+msgName);
+            chatRoom.put(msgName, new Room(msg.getSendTo(), msg.getSentBy()));
+            chatRoom.get(msgName).addMsg(msg);
+            chatList.getItems().add(0, chatRoom.get(msgName));
         }else {
-//            System.out.println("contain name");
-            chatList.getItems().remove(chatRoom.get(msg.getSentBy()));
-            chatRoom.get(msg.getSentBy()).addMsg(msg);
+            System.out.println("contain name");
+            chatList.getItems().remove(chatRoom.get(msgName));
+            chatRoom.get(msgName).addMsg(msg);
 //            chatRoom.get(msg.getSentBy()).getData().get(msg.getSentBy()).add(msg);
-            chatList.getItems().add(0, chatRoom.get(msg.getSentBy()));
+            chatList.getItems().add(0, chatRoom.get(msgName));
         }
     }
 
@@ -450,6 +462,9 @@ public class Controller implements Initializable {
 
                     VBox wrapper = new VBox();
                     Label nameLabel = new Label(room.getName());
+//                    System.out.println("update chatlist, getName "+room.getName());
+//                    System.out.println("room data");
+//                    System.out.println(room.getData());
                     Label msgLabel = new Label(room.getShowOnChatList());
 
                     nameLabel.setPrefSize(100, 20);
@@ -463,6 +478,7 @@ public class Controller implements Initializable {
                         @Override
                         public void handle(MouseEvent mouseEvent) {
                             updateChatContentClick(room);//TODO 还需要chatContentList才能更新
+//                            nameLabel.setStyle("-fx-border-color: gray;");
                         }
                     });
 

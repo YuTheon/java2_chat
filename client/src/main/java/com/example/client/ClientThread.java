@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class ClientThread implements Runnable{
     private ObjectOutputStream oos;
@@ -93,13 +95,21 @@ public class ClientThread implements Runnable{
      * @param msg
      */
     public void doPOST(Message msg){
-        if(Controller.chatWith.containsKey(msg.getSentBy())) {
-            Controller.chatWith.get(msg.getSentBy()).add(msg);
+//        TODO 这里关键在于msg sendBy是
+        List<String> sendTos = Arrays.stream(msg.getSendTo().split(",")).toList();
+        String msgName;
+        if(sendTos.size()==1){
+            msgName = msg.getSentBy();
         }else{
-            Controller.chatWith.put(msg.getSentBy(), new ArrayList<>());
-            Controller.chatWith.get(msg.getSentBy()).add(msg);
+            msgName = msg.getSendTo();
         }
-        if(Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
+        if(Controller.chatWith.containsKey(msgName)) {
+            Controller.chatWith.get(msgName).add(msg);
+        }else{
+            Controller.chatWith.put(msgName, new ArrayList<>());
+            Controller.chatWith.get(msgName).add(msg);
+        }
+        if(Controller.sendTo != null && Controller.sendTo.equals(msgName)) {
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
@@ -130,6 +140,7 @@ public class ClientThread implements Runnable{
             Controller.chatWith.put(msg.getSentBy(), new ArrayList<>());
             Controller.chatWith.get(msg.getSentBy()).add(msg);
         }
+//        Message ms = new Message(msg.getType(), msg.getTimestamp(),  "SERVER", msg.getSendTo(), msg.getData(), msg.getRoomId());
         if(Controller.sendTo != null && Controller.sendTo.equals(msg.getSentBy())) {
             Platform.runLater(new Runnable() {
                 @Override
@@ -151,7 +162,13 @@ public class ClientThread implements Runnable{
         getting = true;
     }
     public void doRCHAT(Message msg){
-        Controller.chatRoom.get(Controller.sendTo).setId(msg.getRoomId());
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Controller.chatRoom.get(Controller.sendTo).setId(msg.getRoomId());
+            }
+        });
+
     }
 
     public void doCheckOnline(Message msg){

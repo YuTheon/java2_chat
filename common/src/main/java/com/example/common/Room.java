@@ -91,7 +91,6 @@ public class Room {
     }
     public String getShowOnChatList(){
         if(showOnChatList == null){
-
             showOnChatList = "server:no message";
         }
         return showOnChatList;

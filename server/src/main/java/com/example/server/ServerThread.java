@@ -155,7 +155,7 @@ public class ServerThread implements Runnable{
             }
         }else{
             room.getData().get(sendBy).add(msg);
-            sendTos.forEach(s->{
+            sendTos.stream().filter(s->!sendBy.equals(s)).forEach(s->{
                 ObjectOutputStream os = Server.userOos.get(s);
                 if(os != null){
                     try {
@@ -197,14 +197,14 @@ public class ServerThread implements Runnable{
         }
         String roomName = total.stream().sorted().collect(Collectors.joining(","));
 //        对发信的回确认消息（包括roomid）
-        oos.writeObject(new Message("RCHAT", new Date(), msg.getSentBy(), roomName, "", room.getId()));
+        oos.writeObject(new Message("RCHAT", new Date(), roomName, msg.getSentBy(), "", room.getId()));
         oos.flush();
 //        对这个群的每个人都发了消息说是群聊建立
         invites.stream().forEach(s->{
             ObjectOutputStream os = Server.userOos.get(s);
             try {
-                os.writeObject(new Message("POST", new Date(),
-                        "SERVER",
+                os.writeObject(new Message("GROUP", new Date(),
+                        roomName,
                         s, "set up a group, there are "+ roomName, room.getId()));
                 os.flush();
             } catch (IOException e) {

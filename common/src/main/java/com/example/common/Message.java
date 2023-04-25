@@ -42,7 +42,7 @@ public class Message implements Serializable {
     }
     @Override
     public String toString(){
-        return "Msg: type= " + type + "sentBy= " + sentBy + ", sendTo= " + sendTo + ", \ndata= " + data;
+        return "Msg: type= " + type + " sentBy= " + sentBy + " sendTo= " + sendTo + " \ndata= " + data;
     }
 
     public int getRoomId() {
