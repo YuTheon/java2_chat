@@ -33,10 +33,8 @@ public class Main extends Application {
         stage.setScene(new Scene(fxmlLoader.load()));
         stage.setTitle("Chatting Client");
         stage.show();
-        System.out.println(111);
         stage.setOnCloseRequest(windowEvent -> {
-            Platform.exit();
-            stage.close();
+
             try {
                 Controller.oos.writeObject(new Message("QUIT", new Date(), Controller.username, "SERVER", ""));
                 Controller.oos.flush();
@@ -47,7 +45,8 @@ public class Main extends Application {
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
+            Platform.exit();
+            stage.close();
         });
     }
 

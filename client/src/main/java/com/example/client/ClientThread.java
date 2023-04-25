@@ -82,6 +82,10 @@ public class ClientThread implements Runnable{
                             System.out.println("QUIT");
                             quit = true;
                             break;
+                        case "SERVERQUIT":
+                            doSERQ();
+                            quit = true;
+                            break;
                     }
                 }
             }
@@ -193,6 +197,15 @@ public class ClientThread implements Runnable{
                 alert.show();
             }
         });
-
+    }
+    public void doSERQ(){
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setContentText("server closed");
+                alert.show();
+            }
+        });
     }
 }

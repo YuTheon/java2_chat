@@ -20,7 +20,7 @@
             <MenuBar VBox.vgrow="NEVER">
                 <Menu mnemonicParsing="false" text="Other">
                     <MenuItem mnemonicParsing="false" onAction="#sendEmoij" text="send Emoij" />
-                    <MenuItem mnemonicParsing="false" onAction="#createGroupChat" text="upload file" />
+                    <MenuItem mnemonicParsing="false" onAction="#groupMember" text="group Members" />
                 </Menu>
             </MenuBar>
             <HBox prefHeight="100.0" prefWidth="200.0">

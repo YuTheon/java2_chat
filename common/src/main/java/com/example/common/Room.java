@@ -42,13 +42,13 @@ public class Room {
         data.put(name2, new ArrayList<>());
     }
     public Room(String host, List<String> cus){
-        memberNum = cus.size()+1;
         memNumLim = 100;
         status = RoomStatus.using;
         this.host = host;
         data = new HashMap<>();
         data.put(host, new ArrayList<>());
         cus.stream().sorted().forEach(s-> data.put(s, new ArrayList<>()));
+        memberNum = data.keySet().size();
         if(cus.size() > 2) {
             name = cus.stream().sorted().limit(3).collect(Collectors.joining(",")) + "..." + "(" + memberNum + ")";
         }else{

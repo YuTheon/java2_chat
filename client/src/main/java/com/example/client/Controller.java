@@ -382,6 +382,12 @@ public class Controller implements Initializable {
 
     public void updateChatContentClick(Room room){
         sendTo = room.getName();
+        if(chatWith.get(sendTo) == null){
+            sendTo = room.getData().keySet().stream().sorted().collect(Collectors.joining(","));
+        }
+        System.out.println("in update chatContentClick");
+        System.out.println(sendTo);
+        System.out.println(chatWith.keySet());
         chatContentList.getItems().clear();
         chatContentList.getItems().addAll(chatWith.get(sendTo));
         chatList.getItems().remove(room);
@@ -407,6 +413,25 @@ public class Controller implements Initializable {
         box.getChildren().addAll(emoijSel, okBtn);
         stage.setScene(new Scene(box));
         stage.showAndWait();
+    }
+
+    @FXML
+    public void groupMember(){
+        Stage stage = new Stage();
+        ComboBox<String> groupM = new ComboBox<>();
+        List<String> groupMems = Arrays.stream(sendTo.split(",")).toList();
+        groupM.getItems().addAll(groupMems);
+        Button okBtn = new Button("close");
+        okBtn.setOnAction(e -> {
+            stage.close();
+        });
+        HBox box = new HBox(10);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(20, 20, 20, 20));
+        box.getChildren().addAll(groupM, okBtn);
+        stage.setScene(new Scene(box));
+        stage.showAndWait();
+
     }
 
     /**
@@ -477,7 +502,7 @@ public class Controller implements Initializable {
 //                    System.out.println(room.getData());
                     Label msgLabel = new Label(room.getShowOnChatList());
 
-                    nameLabel.setPrefSize(100, 20);
+                    nameLabel.setPrefSize(200, 20);
                     nameLabel.setWrapText(true);
                     nameLabel.setStyle("-fx-border-color: gray;-fx-font-size: 14");
 //                    msgLabel.setPrefHeight(15);
